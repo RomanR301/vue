@@ -8,8 +8,8 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
+                @input="showSuggestions"
                 v-on:keydown.enter="add"
-                :data="coinsSuggestions"
                 type="text"
                 name="wallet"
                 id="wallet"
@@ -17,8 +17,8 @@
                 placeholder="Например DOGE"
               />
             </div>
-            <div class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
-              <span class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"> BTC </span>
+            <div v-if="suggestions.length" class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
+              <span v-for="c in suggestions" :key="c" v-bind:value="c.Symbol" @click="addSuggestions(item)" class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"> {{ c.Symbol }} </span>
             </div>
             <div v-if="alreadyExist === true" class="text-sm text-red-600">Такой тикер уже добавлен</div>
           </div>
@@ -53,19 +53,9 @@
           Добавить
         </button>
       </section>
+      {{ suggestedTicker }}
 
-          {{ coinsList }}
-     
-      <!-- <p class="mb-6">
-           {{ coinsList.length }} - coins
-        </p>
-        <ul>
-          <li v-for="c in coinsList"
-          :key = "c.Symbol"
-          >
-          {{ c.Symbol }} - {{ c.FullName }}
-          </li>
-        </ul> -->
+      {{ suggestions }}
       <template v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -139,10 +129,12 @@ export default {
   data() {
     return {
       ticker: "",
+      suggestedTicker: null,
       tickers: [],
       sel: null,
       graph: [],
       coinsList: [],
+      suggestions: [],
       alreadyExist: false,
     };
   },
@@ -159,6 +151,16 @@ export default {
       .catch((err) => console.log(err.message));
   },
   methods: {
+    showSuggestions() {
+      if (this.ticker != "" && this.ticker) {
+        this.suggestions = this.coinsList.filter((item) => {
+          return item.FullName.toUpperCase().includes(this.ticker.toUpperCase());
+        });
+        this.suggestions.length = 4;
+      } else {
+        this.suggestions = [];
+      }
+    },
     add() {
       const currentTicker = {
         name: this.ticker,
@@ -173,16 +175,25 @@ export default {
         setInterval(async () => {
           const f = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=47286244484e73aa1162a1314909c05f28bd349cff9a31a79464f1abf4312aab`);
           const data = await f.json();
+
           this.tickers.find((t) => t.name === currentTicker.name).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
           if (this.sel?.name === currentTicker.name) {
             this.graph.push(data.USD);
           }
         }, 3000);
         this.ticker = "";
+        this.suggestions = []
       }
+    },
+    addSuggestions(item) {
+
+      this.suggestedTicker = item;
+      console.log(this.suggestedTicker)
+
     },
     select(ticker) {
       this.sel = ticker;
+      console.log(this.sel)
       this.graph = [];
     },
     handleDelete(tickerToDelete) {
