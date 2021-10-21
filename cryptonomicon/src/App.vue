@@ -18,7 +18,7 @@
               />
             </div>
             <div v-if="suggestions.length" class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
-              <span v-for="c in suggestions" :key="c" v-bind:value="c.Symbol" @click="addSuggestions(item)" class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"> {{ c.Symbol }} </span>
+              <span v-for="(result, c) in suggestions" :key="c" @click="addSuggestions(result)" class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"> {{ result.Symbol }} </span>
             </div>
             <div v-if="alreadyExist === true" class="text-sm text-red-600">Такой тикер уже добавлен</div>
           </div>
@@ -129,7 +129,7 @@ export default {
   data() {
     return {
       ticker: "",
-      suggestedTicker: null,
+      suggestedTicker: "",
       tickers: [],
       sel: null,
       graph: [],
@@ -151,7 +151,7 @@ export default {
       .catch((err) => console.log(err.message));
   },
   methods: {
-    showSuggestions() {
+    showSuggestions(e) {
       if (this.ticker != "" && this.ticker) {
         this.suggestions = this.coinsList.filter((item) => {
           return item.FullName.toUpperCase().includes(this.ticker.toUpperCase());
@@ -160,7 +160,11 @@ export default {
       } else {
         this.suggestions = [];
       }
-    },
+      if (e.key === "Backspace" || e.key === "Delete") {
+        return e.preventDefault();
+      }
+        this.alreadyExist = false;
+      },
     add() {
       const currentTicker = {
         name: this.ticker,
@@ -183,13 +187,12 @@ export default {
         }, 3000);
         this.ticker = "";
         this.suggestions = []
+
       }
     },
     addSuggestions(item) {
-
-      this.suggestedTicker = item;
-      console.log(this.suggestedTicker)
-
+      this.ticker = item.Symbol;
+      this.add();
     },
     select(ticker) {
       this.sel = ticker;
